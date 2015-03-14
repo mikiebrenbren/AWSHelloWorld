@@ -34,6 +34,7 @@ public class LoginActivity extends ActionBarActivity implements
     protected EditText mPasswordEditText;
     protected EditText mEmailEditText;
     protected Button mLoginButton;
+
     public static CognitoCachingCredentialsProvider cognitoProvider;
 
     /* Request code used to invoke sign in user interactions. */
@@ -48,16 +49,37 @@ public class LoginActivity extends ActionBarActivity implements
      */
     private boolean mIntentInProgress;
 
+    /* Track whether the sign-in button has been clicked so that we know to resolve
+ * all issues preventing sign-in without waiting.
+ */
+    private boolean mSignInClicked;
+
+    /* Store the connection result from onConnectionFailed callbacks so that we can
+ * resolve them when the user clicks sign-in.
+ */
+    private ConnectionResult mConnectionResult;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_login);
 
         //VIEW
-        mPasswordEditText = (EditText) findViewById(R.id.passwordEditText);
         mEmailEditText = (EditText) findViewById(R.id.emailEditText);
+        mPasswordEditText = (EditText) findViewById(R.id.passwordEditText);
         mLoginButton = (Button) findViewById(R.id.loginButton);
         mCreateAccountTextView = (TextView) findViewById(R.id.textViewCreateAccount);
+
+        //TODO this is where I left off, the google+ button on the example has 'this' as a parameter not an onclicklistener
+        findViewById(R.id.google_sign_in_button).setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "Gmail login button has been pressed");
+
+            }
+        });
+
 
         mCreateAccountTextView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,8 +89,6 @@ public class LoginActivity extends ActionBarActivity implements
                 startActivity(intent);
             }
         });
-
-
 
         mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,7 +111,6 @@ public class LoginActivity extends ActionBarActivity implements
                 "us-east-1:1da08193-49c6-426f-ba03-194a87b451bb", // Identity Pool ID
                 Regions.US_EAST_1 // Region
         );
-
         new CognitoAsyncTask().execute();
 
         //able to make dynamodb client  //TODO This can probably be removed later
@@ -121,6 +140,7 @@ public class LoginActivity extends ActionBarActivity implements
         mGoogleApiClient.connect();
     }
 
+    //google api client
     public void onConnectionFailed(ConnectionResult result) {
         if (!mIntentInProgress && result.hasResolution()) {
             try {
@@ -146,7 +166,25 @@ public class LoginActivity extends ActionBarActivity implements
         }
     }
 
-//    int errorCode = GooglePlusUtil.checkGooglePlusApp(this);
+    /* A helper method to resolve the current ConnectionResult error. */
+    private void resolveSignInError() {
+        if (mConnectionResult.hasResolution()) {
+            try {
+                mIntentInProgress = true;
+                startIntentSenderForResult(mConnectionResult.getResolution().getIntentSender(),
+                        RC_SIGN_IN, null, 0, 0, 0);
+            } catch (IntentSender.SendIntentException e) {
+                // The intent was canceled before it was sent.  Return to the default
+                // state and attempt to connect to get an updated ConnectionResult.
+                mIntentInProgress = false;
+                mGoogleApiClient.connect();
+            }
+        }
+    }
+
+
+
+    //    int errorCode = GooglePlusUtil.checkGooglePlusApp(this);
 //    if (errorCode != GooglePlusUtil.SUCCESS) {
 //        GooglePlusUtil.getErrorDialog(errorCode, this, 0).show();
 //    }
