@@ -44,5 +44,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i(TAG, "Login button has been pushed");
             }
         });
+
+
     }
 }
