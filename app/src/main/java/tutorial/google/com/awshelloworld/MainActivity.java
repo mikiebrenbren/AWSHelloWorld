@@ -9,6 +9,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+
 
 public class MainActivity extends ActionBarActivity {
 
@@ -18,6 +23,7 @@ public class MainActivity extends ActionBarActivity {
     protected EditText mPasswordEditText;
     protected EditText mEmailEditText;
     protected Button mLoginButton;
+    public static CognitoCachingCredentialsProvider cognitoProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +50,17 @@ public class MainActivity extends ActionBarActivity {
                 Log.i(TAG, "Login button has been pushed");
             }
         });
+
+        // Initialize the Amazon Cognito credentials provider
+        cognitoProvider = new CognitoCachingCredentialsProvider(
+                this, // Context
+                "us-east-1:1da08193-49c6-426f-ba03-194a87b451bb", // Identity Pool ID
+                Regions.US_EAST_1 // Region
+        );
+
+        new CognitoAsyncTask().execute();
+
+        AmazonDynamoDB client = new AmazonDynamoDBClient(cognitoProvider);
 
 
     }
