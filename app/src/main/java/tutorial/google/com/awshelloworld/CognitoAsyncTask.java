@@ -8,12 +8,17 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.amazonaws.mobileconnectors.cognito.CognitoSyncManager;
+import com.amazonaws.mobileconnectors.cognito.Dataset;
+import com.amazonaws.mobileconnectors.cognito.DefaultSyncCallback;
+import com.amazonaws.regions.Regions;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,12 +54,38 @@ public class CognitoAsyncTask extends AsyncTask<Void, Void, Void>{
         logins.put("accounts.google.com", token);
         LoginActivity.cognitoProvider.withLogins(logins);
 
+        Log.d(TAG, "Begginning Sync");
+        // Initialize the Cognito Sync client
+        CognitoSyncManager syncClient = new CognitoSyncManager(
+                mContext,
+                Regions.US_EAST_1, // Region
+                LoginActivity.cognitoProvider);
+
+        // Create a record in a dataset and synchronize with the server
+        Dataset dataset = syncClient.openOrCreateDataset("myDataset");
+        dataset.put("myKey", "myValue");
+        dataset.synchronize(new DefaultSyncCallback() {
+            @Override
+            public void onSuccess(Dataset dataset, List newRecords) {
+                //Your handler code here
+                Log.d(TAG, "Successful sync");
+            }
+        });
+        Log.d(TAG, "End of Sync");
+
+
+        try {
+            Toast.makeText(mContext, "View Logs," + "\n here is the account name " + accounts[0].name + "\n here is the token " + token,
+                    Toast.LENGTH_LONG).show();
+        }catch (Exception e){
+            Log.i(TAG, "Exception" + e.getCause() + " " + e.getMessage());
+        }
         Log.i(TAG, "Logs are beginning");
         Log.i(TAG, "Context: " + mContext.toString());
         Log.i(TAG, "Application Context: " + mContext.getApplicationContext().toString());
         Log.i(TAG,accounts[0].name);
         Log.i(TAG, String.valueOf(logins.containsKey("accounts.google.com")));
-        Log.i(TAG, token + "");
+        Log.i(TAG, "thisis the token:" + token + "");
         Log.i(TAG, "End of async task");
 
 //        Toast.makeText(mContext.getApplicationContext(), "this is my Toast message!!! =)",

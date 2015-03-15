@@ -75,6 +75,21 @@ public class LoginActivity extends ActionBarActivity implements GoogleApiClient.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        // Initialize the Amazon Cognito credentials provider
+        cognitoProvider = new CognitoCachingCredentialsProvider(
+                this, // Context
+                "us-east-1:1da08193-49c6-426f-ba03-194a87b451bb", // Identity Pool ID
+                Regions.US_EAST_1 // Region
+        );
+
+        //instantiating google api client
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Plus.API)
+                .addScope(Plus.SCOPE_PLUS_LOGIN)
+                .build();
+
         //VIEW
         mEmailEditText = (EditText) findViewById(R.id.emailEditText);
         mPasswordEditText = (EditText) findViewById(R.id.passwordEditText);
@@ -111,13 +126,6 @@ public class LoginActivity extends ActionBarActivity implements GoogleApiClient.
             }
         });
 
-        // Initialize the Amazon Cognito credentials provider
-        cognitoProvider = new CognitoCachingCredentialsProvider(
-                this, // Context
-                "us-east-1:1da08193-49c6-426f-ba03-194a87b451bb", // Identity Pool ID
-                Regions.US_EAST_1 // Region
-        );
-
         //able to make dynamodb client  //TODO This can probably be removed later
         AmazonDynamoDB client = new AmazonDynamoDBClient(cognitoProvider);
 
@@ -127,13 +135,6 @@ public class LoginActivity extends ActionBarActivity implements GoogleApiClient.
 //        mGoogleApiClientFragment = new GoogleApiClientFragment();
 //        fragmentTransaction.add(mGoogleApiClientFragment, mGoogleApiClientFragment.getClass().getSimpleName());
 
-        //instantiating google api client
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Plus.API)
-                .addScope(Plus.SCOPE_PLUS_LOGIN)
-                .build();
     }
 
     public void onStart() {
